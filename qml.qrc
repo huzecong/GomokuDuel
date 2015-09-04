@@ -1,0 +1,19 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>TextButton.qml</file>
+        <file>image/background.png</file>
+        <file>image/board.png</file>
+        <file>image/title.png</file>
+        <file>MainPage.qml</file>
+        <file>ConnectPage.qml</file>
+        <file>image/avatar.gif</file>
+        <file>CustomPage.qml</file>
+        <file>CustomSubtitled.qml</file>
+        <file>CustomBaseListItem.qml</file>
+        <file>CreateMatchDialog.qml</file>
+        <file>ManualIPDialog.qml</file>
+        <file>ClickableSquare.qml</file>
+        <file>image/backspace.svg</file>
+    </qresource>
+</RCC>
