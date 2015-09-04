@@ -15,5 +15,6 @@
         <file>ManualIPDialog.qml</file>
         <file>ClickableSquare.qml</file>
         <file>image/backspace.svg</file>
+        <file>ConnectToHostDialog.qml</file>
     </qresource>
 </RCC>

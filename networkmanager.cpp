@@ -35,15 +35,15 @@ QVariant NetworkHostList::data(const QModelIndex &index, int role) const {
     const NetworkHostData& host = m_data.at(row);
     switch(role) {
     case NameRole:
-        return host.name;
+        return host.name();
     case AvatarRole:
-		return host.avatarId;
+		return host.avatarId();
 	case IPRole:
-		return host.ip;
+		return host.ip();
 	case RoundsRole:
-		return host.rounds;
+		return host.rounds();
 	case WinningRateRole:
-		return (double)host.win * 100.0 / host.rounds;
+		return host.winningRate();
     }
     return QVariant();
 }
@@ -100,7 +100,7 @@ NetworkManager::NetworkManager(QObject *parent) : QObject(parent) {
 	QObject::connect(&this->udpSocket, &QUdpSocket::readyRead,
 	                 this, &NetworkManager::receiveMatchInfo);
 	
-	this->udpSendTimer.start();
+//	this->udpSendTimer.start();
 }
 
 void NetworkManager::sendInfo(const QString &qualifier) {
@@ -115,6 +115,63 @@ void NetworkManager::sendInfo(const QString &qualifier) {
 	qDebug() << "send" << dateTime << ip << qualifier;
 }
 
+void NetworkManager::startHost() {
+	this->setIsHost(true);
+	this->pendingOpponent.clear();
+	this->udpSendTimer.start();
+}
+
+void NetworkManager::abortHost() {
+	this->udpSendTimer.stop();
+	this->setIsHost(false);
+	for (const NetworkHostData &data : this->pendingOpponent) {
+		respondJoinRequest(data, false, false);
+	}
+	this->pendingOpponent.clear();
+}
+
+bool NetworkManager::updateHostList(const NetworkHostData &data) {
+	bool found = false;
+	for (int i = 0; i < this->m_hostList->count(); ++i) {
+		NetworkHostData &cur = this->m_hostList->get(i);
+		if (cur.dateTime.msecsTo(QDateTime::currentDateTime()) >= __udpTimeoutInterval) {
+			this->m_hostList->remove(i);
+			--i;
+		} else if (data == cur) {
+			found = true;
+			cur.dateTime = data.dateTime;
+		}
+	}
+	if (!found) {
+		this->m_hostList->append(data);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void NetworkManager::connectToHost(const QString &ip) {
+	assert(this->isHost() == false);
+	
+}
+
+void NetworkManager::respondJoinRequest(const NetworkHostData &data, bool accepted,
+                                        bool triggerNewSignal) {
+	assert(this->isHost() == true);
+	
+	
+	if (triggerNewSignal) {
+		this->pendingOpponent.pop_front();
+		if (this->pendingOpponent.size() > 0) {
+			emit newOpponent(this->pendingOpponent.front());
+		}
+	}
+}
+
+void NetworkManager::confirmJoinRequest(const NetworkHostData &data) {
+	assert(this->isHost() == false);
+}
+
 void NetworkManager::receiveMatchInfo() {
 	QByteArray datagram;
 	while (udpSocket.hasPendingDatagrams()) {
@@ -124,22 +181,31 @@ void NetworkManager::receiveMatchInfo() {
 		QDateTime dateTime;
 		QDataStream in(&datagram, QIODevice::ReadOnly);
 		in >> dateTime >> profile >> ip >> qualifier;
-		if (QHostAddress(ip) == this->ip) continue ;
 		qDebug() << "receive" << dateTime << ip << qualifier;
 		if (dateTime.msecsTo(QDateTime::currentDateTime()) >= __udpTimeoutInterval)
 			continue;
 		NetworkHostData data(profile, ip, "null", 1, 0, dateTime);
 		
-		bool found = false;
-		for (int i = 0; i < this->m_hostList->count(); ++i) {
-			const NetworkHostData &cur = this->m_hostList->get(i);
-			if (cur.dateTime.msecsTo(QDateTime::currentDateTime()) >= __udpTimeoutInterval) {
-				this->m_hostList->remove(i);
-				--i;
-			} else if (data == cur) {
-				found = true;
+		if (qualifier == "create") {			// Host: create room
+			if (!isHost()) {
+				updateHostList(data);
 			}
 		}
-		if (!found) this->m_hostList->append(data);
+		else if (qualifier == "join") {			// Client: join room request
+			assert(this->isHost() == true);
+			this->pendingOpponent.append(data);
+			if (this->pendingOpponent.size() == 1) {
+				emit newOpponent(this->pendingOpponent.front());
+			}
+		}
+		else if (qualifier == "accept") {		// Host: accept join request
+			assert(this->isHost() == false);
+		}	
+		else if (qualifier == "refuse") {		// Host: refuse join request
+			assert(this->isHost() == false);
+		}
+		else if (qualifier == "confirm") {		// Client: confirm join
+			assert(this->isHost() == true);
+		}
 	}
 }

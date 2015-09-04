@@ -3,50 +3,25 @@ import QtQuick.Layouts 1.1
 import Material 0.1 as Material
 import Material.ListItems 0.1 as ListItem
 import Material.Extras 0.1 as Extras
-
-import com.Kanari.NetworkManager 1.0
+import com.Kanari.GomokuDuel 1.0
 
 CustomPage {
     id: page
     
     title: qsTr("Select Opponent")
     
-    actionBar {
-        customContent: MouseArea {
-            anchors.fill: parent
-            
-            property variant clickPos: "1,1"
-            
-            onPressed: {
-                clickPos  = Qt.point(mouse.x,mouse.y)
-            }
-            
-            onPositionChanged: {
-                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y)
-                window.x += delta.x;
-                window.y += delta.y;
-            }
-            
-            Text {
-                text: page.title
-                anchors.centerIn: parent
-                font.pixelSize: parent.height * 0.5
-            }
-        }
-    }
-
-    actionBar.hidden: false
-    
-    NetworkManager {
-        id: manager
+    Component.onDestruction: {
+        GameController.destroyNetwork()
     }
     
     CreateMatchDialog {
         id: createMatchDialog
     }
-    
     ManualIPDialog {
         id: manualIPDialog
+    }
+    ConnectToHostDialog {
+        id: connectToHostDialog
     }
     
     Material.View {
@@ -88,7 +63,7 @@ CustomPage {
 //                highlightRangeMode: ListView.ApplyRange
 //                keyNavigationWraps: true
                 
-                model: manager.hostList
+                model: GameController.network.hostList
                 delegate: CustomSubtitled {
                     text: model.name
                     subText: qsTr("You've had %1 matches with this player,
@@ -98,7 +73,14 @@ with a winning rate of %2%.").arg(Number(model.rounds)).arg(Number(model.winning
                     maximumLineCount: 3
                     
                     focused: ListView.isCurrentItem
-                    onClicked: list.currentIndex = index
+                    onClicked: {
+                        if (list.currentIndex == index) {
+                            connectToHostDialog.data = GameController.network.hostList
+                            connectToHostDialog.show(model.data)
+                        } else {
+                            list.currentIndex = index
+                        }
+                    }
                     
                     secondaryItem: Material.Icon {
                         name: "navigation/chevron_right"
@@ -122,6 +104,7 @@ with a winning rate of %2%.").arg(Number(model.rounds)).arg(Number(model.winning
         }
         
         ListItem.Subheader {
+            anchors.top: beforeSubheader.bottom
             visible: list.count == 0
             text: "    Searching for existing matches..."
             style: "subheading"

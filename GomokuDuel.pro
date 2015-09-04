@@ -4,7 +4,8 @@ QT += qml quick network gui
 CONFIG += c++11
 
 SOURCES += main.cpp \
-    networkmanager.cpp
+    networkmanager.cpp \
+    gamecontroller.cpp
 
 RESOURCES += qml.qrc
 
@@ -24,8 +25,10 @@ DISTFILES += \
     CustomBaseListItem.qml \
     CreateMatchDialog.qml \
     ManualIPDialog.qml \
-    ClickableSquare.qml
+    ClickableSquare.qml \
+    ConnectToHostDialog.qml
 
 HEADERS += \
-    networkmanager.h
+    networkmanager.h \
+    gamecontroller.h
 

@@ -1,17 +1,20 @@
 import QtQuick 2.5
 import QtQuick.Layouts 1.1
 import Material 0.1
+import com.Kanari.GomokuDuel 1.0
 
 Dialog {
     id: root
     
-    property string ipAddress
+    property string ipAddress: GameController.network.hostAddress
     
     property string avatarSource: avatar.source
     property string profileName: nameLabel.text
     property string opponentIP: "0.1.2.3"
     property int rounds
     property double winningRate
+    
+    property alias infoText: playerInfoLabel.text
     
     title: qsTr("Your IP address is: %1".arg(ipAddress))
 
@@ -42,7 +45,7 @@ Dialog {
             PropertyChanges { target: foundContent; visible: true }
         }
     ]
-    state: "found"
+    state: "wait"
     
     dismissOnTap: false
     
@@ -72,6 +75,7 @@ Dialog {
         visible: false
         
         Label {
+            id: playerInfoLabel
             text: qsTr("A new opponent!")
         }
         

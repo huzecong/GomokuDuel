@@ -1,38 +1,12 @@
 import QtQuick 2.5
 import QtQuick.Layouts 1.1
 import Material 0.1 as Material
+import com.Kanari.GomokuDuel 1.0
 
 CustomPage {
     id: page
     
     title: qsTr("Gomoku Duel")
-    
-    actionBar {
-        customContent: MouseArea {
-            anchors.fill: parent
-            
-            property variant clickPos: "1,1"
-            
-            onPressed: {
-                clickPos  = Qt.point(mouse.x,mouse.y)
-            }
-            
-            onPositionChanged: {
-                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y)
-                window.x += delta.x;
-                window.y += delta.y;
-            }
-            
-            Text {
-                text: page.title
-                anchors.centerIn: parent
-                font.pixelSize: parent.height * 0.5
-            }
-        }
-    }
-    
-//    anchors.fill: parent  // will result in no transition
-    actionBar.hidden: false
     
     Image {
         id: title
@@ -78,7 +52,10 @@ CustomPage {
             opacity: 0.0; enabled: false
             fontSize: 60 * window.scale
             anchors.horizontalCenter: parent.horizontalCenter
-            onClicked: pageStack.push("qrc:/ConnectPage.qml")
+            onClicked: {
+                GameController.initNetwork()
+                pageStack.push("qrc:/ConnectPage.qml")
+            }
         }
         
         TextButton {

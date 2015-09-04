@@ -3,7 +3,7 @@ import QtQuick.Window 2.2
 import QtQuick.Dialogs 1.2
 import QtQuick.Layouts 1.1
 import Material 0.1 as Material
-//import Material 0.1
+import com.Kanari.GomokuDuel 1.0
 
 Material.ApplicationWindow {
     
@@ -52,9 +52,15 @@ Material.ApplicationWindow {
         PauseAnimation {
             duration: 200
         }
-        PropertyAnimation {
-            target: initialPage; property: "opacity"
-            duration: 750; from: 1.0; to: 0.0
+        ParallelAnimation {
+            PropertyAnimation {
+                target: initialPage; property: "opacity"
+                duration: 750; from: 1.0; to: 0.0
+            }
+            PropertyAnimation {
+                target: bg; property: "opacity"
+                duration: 900; from: 1.0; to: 0.0
+            }
         }
         ScriptAction {
             script: Qt.quit()
