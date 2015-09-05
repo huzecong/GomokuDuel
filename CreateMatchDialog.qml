@@ -3,21 +3,79 @@ import QtQuick.Layouts 1.1
 import Material 0.1
 import com.Kanari.GomokuDuel 1.0
 
-Dialog {
+CustomDialog {
     id: root
     
-    property string ipAddress: GameController.network.hostAddress
+    property bool done: true
     
-    property string avatarSource: avatar.source
-    property string profileName: nameLabel.text
+    Timer {
+        id: timer
+        repeat: false
+        interval: 2500
+        onTriggered: {
+            root.positiveButton.enabled = true
+            root.negativeButton.enabled = true
+            if (!root.done) {
+                root.done = true
+                timeoutDialog.show()
+            }
+        }
+    }
+    
+    property alias timeoutDialog: timeoutDialog
+    property alias timer: timer
+    
+    Dialog {
+        id: timeoutDialog
+        title: qsTr("Connection timeout")
+        text: qsTr("Your opponent may have gone offline")
+        negativeButtonText: qsTr("Done")
+        positiveButton.visible: false
+        
+        onRejected: {
+            if (root.state == "connect") {
+                root.close()
+            } else {
+                root.done = false
+                root.state = "wait"
+            }
+        }
+    }
+    
+    function showDialog() {
+        done = false;
+        positiveButton.enabled = true
+        negativeButton.enabled = true
+        show();
+    }
+    
+    property string ipAddress
+    
+    property string avatarSource
+    property alias profileName: nameLabel.text
     property string opponentIP: "0.1.2.3"
     property int rounds
     property double winningRate
     
+    property alias waitText: waitLabel.text
     property alias infoText: playerInfoLabel.text
     
     title: qsTr("Your IP address is: %1".arg(ipAddress))
-
+    
+    signal abort()
+    signal accept()
+    signal refuse()
+    
+    onRejected: {
+        if (state == "found") {
+            root.refuse()
+        } else {
+            root.abort()
+        }
+    }
+    
+    onAccepted: root.accept()
+    
     states: [
         State {
             name: "wait"
@@ -25,10 +83,6 @@ Dialog {
                 target: root
                 negativeButtonText: qsTr("Abort")
                 positiveButton.visible: false
-                
-                onRejected: {
-                    close
-                }
             }
             PropertyChanges { target: waitContent; visible: true }
             PropertyChanges { target: foundContent; visible: false }
@@ -43,6 +97,18 @@ Dialog {
             }
             PropertyChanges { target: waitContent; visible: false }
             PropertyChanges { target: foundContent; visible: true }
+        },
+        State {
+            name: "connect"
+            PropertyChanges {
+                target: root
+                negativeButtonText: qsTr("Abort")
+                positiveButton.visible: false
+                
+                onRejected: root.abort()
+            }
+            PropertyChanges { target: waitContent; visible: true }
+            PropertyChanges { target: foundContent; visible: true }
         }
     ]
     state: "wait"
@@ -55,13 +121,14 @@ Dialog {
         visible: false
         
         ProgressCircle {
+            color: Palette.colors["blue"]["500"]
             indeterminate: true
             width: Units.dp(50)
             height: Units.dp(50)
             dashThickness: Units.dp(5)
         }
         Label {
-            id: label
+            id: waitLabel
             text: qsTr("Waiting for opponents...")
             style: "dialog"
             Layout.alignment: Qt.AlignVCenter
@@ -110,7 +177,7 @@ Dialog {
                     
                     AnimatedImage {
                         id: avatar
-                        source: "qrc:/image/avatar.gif"
+                        source: "qrc:/avatar/%1".arg(avatarSource)
                         anchors.centerIn: parent
                         fillMode: Image.PreserveAspectCrop
                         width: Units.dp(40)

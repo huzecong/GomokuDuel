@@ -10,18 +10,109 @@ CustomPage {
     
     title: qsTr("Select Opponent")
     
-    Component.onDestruction: {
-        GameController.destroyNetwork()
+    function loadGame(isHost, ip, p1Name, p1Avatar, p2Name, p2Avatar, myself) {
+        console.log(isHost, ip, p1Name, p1Avatar, p2Name, p2Avatar, myself)
+        GameStorage.isHost = isHost
+        GameStorage.opponentIP = ip
+        GameStorage.player1Name = p1Name
+        GameStorage.player1AvatarId = p1Avatar
+        GameStorage.player2Name = p2Name
+        GameStorage.player2AvatarId = p2Avatar
+        GameStorage.myself = myself
+        manager.reset()
+        pageStack.push("qrc:/GamePage.qml")
+    }
+    
+    BroadcastManager {
+        id: manager
+        
+        isHost: false
+        profileName: GameStorage.profileName
+        avatarId: GameStorage.avatarId
+        
+        onHostTimeout: {
+            if (!connectToHostDialog.done
+                    && connectToHostDialog.opponentIP == ip
+                    && connectToHostDialog.profileName == name) {
+                connectToHostDialog.done = true
+                connectToHostDialog.timeoutDialog.show()
+            }
+        }
+        onNewOpponent: {
+            createMatchDialog.profileName = name
+            createMatchDialog.opponentIP = ip
+            createMatchDialog.avatarSource = avatarId
+            createMatchDialog.state = "found"
+        }
+        onRequestAccepted: {
+            if (!connectToHostDialog.done) {
+                connectToHostDialog.done = true
+                connectToHostDialog.close()
+                manager.confirmJoinRequest(ip)
+                
+                loadGame(manager.isHost, connectToHostDialog.opponentIP,
+                         connectToHostDialog.profileName,
+                         connectToHostDialog.avatarSource,
+                         GameStorage.profileName,
+                         GameStorage.avatarId, 1)
+            }
+        }
+        onRequestRefused: {
+            if (!connectToHostDialog.done) {
+                connectToHostDialog.done = true
+                connectToHostDialog.refuseDialog.show()
+            }
+        }
+        onConnectionConfirmed: {
+            createMatchDialog.done = true
+            createMatchDialog.close()
+            
+            loadGame(manager.isHost, createMatchDialog.opponentIP,
+                     GameStorage.profileName,
+                     GameStorage.avatarId,
+                     createMatchDialog.profileName,
+                     createMatchDialog.avatarSource, 0)
+        }
     }
     
     CreateMatchDialog {
         id: createMatchDialog
+        ipAddress: manager.refreshIP()
+        
+        onAbort: {
+            createMatchDialog.done = true
+            manager.abortHost()
+            close()
+        }
+        onAccept: {
+            manager.respondJoinRequest(opponentIP, true)
+            positiveButton.enabled = false
+            negativeButton.enabled = false
+            done = false
+            timer.start()
+        }
+        onRefuse: {
+            manager.respondJoinRequest(opponentIP, false)
+            createMatchDialog.state = "wait"
+        }
     }
     ManualIPDialog {
         id: manualIPDialog
+        
+        onAccepted: {
+            manager.connectToHost(ipAddress)
+            connectToHostDialog.showDialog("", ipAddress, "")
+        }
     }
     ConnectToHostDialog {
         id: connectToHostDialog
+        ipAddress: manager.hostAddress
+        
+        onAbort: {
+            connectToHostDialog.done = true
+            manager.abortConnectToHost()
+            close()
+        }
     }
     
     Material.View {
@@ -34,12 +125,15 @@ CustomPage {
         }
         height: parent.height
 
-        elevation: 1
+        elevation: 10
         
         ListItem.Standard {
             id: createMatchItem
             text: "Create match..."
-            onClicked: createMatchDialog.show()
+            onClicked: {
+                manager.startHost()
+                createMatchDialog.showDialog()
+            }
         }
         
         ListItem.Subheader {
@@ -63,11 +157,15 @@ CustomPage {
 //                highlightRangeMode: ListView.ApplyRange
 //                keyNavigationWraps: true
                 
-                model: GameController.network.hostList
+                model: manager.hostList
                 delegate: CustomSubtitled {
                     text: model.name
+                    
+                    property int rounds: 10
+                    property double winningRate: 50.0
+                    
                     subText: qsTr("You've had %1 matches with this player,
-with a winning rate of %2%.").arg(Number(model.rounds)).arg(Number(model.winningRate).toFixed(1))
+with a winning rate of %2%.").arg(Number(rounds)).arg(Number(winningRate).toFixed(1))
                     valueText: "IP: %1".arg(model.ip)
                     
                     maximumLineCount: 3
@@ -75,8 +173,9 @@ with a winning rate of %2%.").arg(Number(model.rounds)).arg(Number(model.winning
                     focused: ListView.isCurrentItem
                     onClicked: {
                         if (list.currentIndex == index) {
-                            connectToHostDialog.data = GameController.network.hostList
-                            connectToHostDialog.show(model.data)
+                            manager.connectToHost(model.ip)
+                            console.log(model.ip)
+                            connectToHostDialog.showDialog(model.name, model.ip, model.avatarId)
                         } else {
                             list.currentIndex = index
                         }
@@ -93,7 +192,7 @@ with a winning rate of %2%.").arg(Number(model.rounds)).arg(Number(model.winning
                     }
                     
                     action: AnimatedImage {
-                        source: "qrc:/image/avatar.gif"
+                        source: "qrc:/avatar/%1".arg(model.avatarId)
                         anchors.centerIn: parent
                         fillMode: Image.PreserveAspectCrop
                         width: Material.Units.dp(40)

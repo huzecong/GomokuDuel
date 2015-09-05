@@ -217,16 +217,18 @@ FocusScope {
         customContent: MouseArea {
             anchors.fill: parent
             
-            property variant clickPos: "1,1"
+            property variant clickPos: "-1,-1"
             
             onPressed: {
-                clickPos  = Qt.point(mouse.x,mouse.y)
+                clickPos = Qt.point(mouse.x, mouse.y)
             }
             
             onPositionChanged: {
-                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y)
-                window.x += delta.x;
-                window.y += delta.y;
+                if (clickPos.x >= 0) {
+                    var delta = Qt.point(mouse.x - clickPos.x, mouse.y - clickPos.y)
+                    window.x += delta.x;
+                    window.y += delta.y;
+                }
             }
             
             Text {

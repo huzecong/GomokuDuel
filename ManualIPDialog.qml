@@ -8,7 +8,7 @@ Dialog {
     
     property alias ipAddress: ipText.text
     
-    title: qsTr("Input opponent IP".arg(ipAddress))
+    title: qsTr("Input opponent IP")
     
     dismissOnTap: true
     

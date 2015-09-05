@@ -52,10 +52,7 @@ CustomPage {
             opacity: 0.0; enabled: false
             fontSize: 60 * window.scale
             anchors.horizontalCenter: parent.horizontalCenter
-            onClicked: {
-                GameController.initNetwork()
-                pageStack.push("qrc:/ConnectPage.qml")
-            }
+            onClicked: pageStack.push("qrc:/ConnectPage.qml")
         }
         
         TextButton {
@@ -64,6 +61,7 @@ CustomPage {
             opacity: 0.0; enabled: false
             fontSize: 60 * window.scale
             anchors.horizontalCenter: parent.horizontalCenter
+            onClicked: pageStack.push("qrc:/ProfilePage.qml")
         }
         
         TextButton {

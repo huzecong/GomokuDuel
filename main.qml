@@ -16,8 +16,10 @@ Material.ApplicationWindow {
     
     title: qsTr("Gomoku Duel")
     
-    width: Screen.desktopAvailableHeight >= 900 ? 1200 : 800
-    height: Screen.desktopAvailableHeight >= 900 ? 900 : 600
+    property bool largeScreen: Screen.desktopAvailableHeight >= 900
+    
+    width: largeScreen ? 1200 : 920
+    height: largeScreen? 900 : 690
 /*    onHeightChanged: {
         width = Math.floor(height * 4 / 3)
     }
@@ -77,7 +79,7 @@ Material.ApplicationWindow {
     
     initialPage: MainPage {
         Component.onCompleted: {
-            Material.Units.multiplier = Screen.desktopAvailableHeight >= 900 ? 2.0 : 1.4
+            Material.Units.multiplier = window.largeScreen ? 2.0 : 1.0
             console.log(Material.Units.multiplier)
         }
     }

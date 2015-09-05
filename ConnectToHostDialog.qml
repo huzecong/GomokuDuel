@@ -1,22 +1,35 @@
-import QtQuick 2.0
+import QtQuick 2.5
+import QtQuick.Layouts 1.1
+import Material 0.1
 import com.Kanari.GomokuDuel 1.0
 
 CreateMatchDialog {
     id: root
-    state: "found"
     
-    property alias data: data
+    state: "connect"
     
-    NetworkHostData {
-        id: data
+    waitText: qsTr("Connecting to host...")
+    infoText: qsTr("Your opponent:")
+    
+    property alias refuseDialog: refuseDialog
+    
+    Dialog {
+        id: refuseDialog
+        title: qsTr("Match refused")
+        text: qsTr("Your opponent refused this match")
+        negativeButtonText: qsTr("Done")
+        positiveButton.visible: false
+        
+        onRejected: {
+            root.close()
+        }
     }
     
-    function show(data) {
-        avatarSource = data.avatarId;
-        opponentIP = data.ip;
-        profileName = data.name;
-        rounds = data.rounds;
-        winningRate = data.winningRate;
+    function showDialog(_name, _ip, _avatarId) {
+        done = false
+        profileName = _name
+        opponentIP = _ip
+        avatarSource = _avatarId
+        show()
     }
 }
-
