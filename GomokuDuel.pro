@@ -34,7 +34,8 @@ DISTFILES += \
 	GameBoard.qml \
 	ProfilePage.qml \
 	GameBoardToggle.js \
-	BoardCircle.qml
+	BoardCircle.qml \
+	font/ZhuanTi.ttc
 
 HEADERS += \
 	udpbroadcastmanager.h \

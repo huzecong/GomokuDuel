@@ -77,6 +77,7 @@ UdpBroadcastManager::UdpBroadcastManager(QObject *parent) : QObject(parent) {
 	
 	refreshIP();
 	
+    setIsHost(false);
 	this->udpSocket.bind(UDP_PORT);
 	this->udpSendTimer.setInterval(__udpSendInterval);
 	QObject::connect(&this->udpSendTimer, &QTimer::timeout, [this]() {
@@ -160,7 +161,6 @@ void UdpBroadcastManager::connectToHost(QString ip) {
 	this->aimHostIP = QHostAddress(ip);
 	if (this->aimHostIP.isNull()) {
 		emit invalidHostIP(ip);
-		assert(false);
 	} else {
 		sendInfo("join", this->aimHostIP);
 	}

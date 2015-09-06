@@ -23,7 +23,14 @@ CustomPage {
 		manager.reset()
 		pageStack.push("qrc:/GamePage.qml")
 	}
-	
+    
+    Material.Dialog {
+        id: invalidIPDialog
+        title: qsTr("Invalid IP")
+        positiveButton.visible: false
+        negativeButtonText: qsTr("OK")
+    }
+    
 	BroadcastManager {
 		id: manager
 		
@@ -40,6 +47,10 @@ CustomPage {
 				connectToHostDialog.timeoutDialog.show()
 			}
 		}
+        onInvalidHostIP: {
+            invalidIPDialog.text = qsTr("Please check your input: %1").arg(ip)
+            invalidIPDialog.show()
+        }
 		onNewOpponent: {
 			createMatchDialog.profileName = name
 			createMatchDialog.opponentIP = ip
@@ -108,7 +119,7 @@ CustomPage {
 		
 		onAccepted: {
 			manager.connectToHost(ipAddress)
-			connectToHostDialog.showDialog("", ipAddress, "")
+			connectToHostDialog.showDialog("", ipAddress, "", 0)
 		}
 	}
 	ConnectToHostDialog {

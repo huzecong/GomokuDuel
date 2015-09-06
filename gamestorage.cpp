@@ -5,7 +5,7 @@ GameStorage::GameStorage(QObject *parent) : QObject(parent) {
 	srand(time(0));
 	
 	QSettings settings;
-	setUniqueId(settings.value("uniqueId", rand()).toInt());
+	this->m_uniqueId = settings.value("uniqueId", rand()).toInt();
 	settings.setValue("uniqueId", uniqueId());
 	setProfileName(settings.value("profileName", QString("Player %1").arg(uniqueId())).toString());
 	setAvatarId(settings.value("avatarId", QString("gomoku.jpg")).toString());

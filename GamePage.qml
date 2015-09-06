@@ -306,7 +306,7 @@ CustomPage {
 					Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
 					Layout.leftMargin: Material.Units.dp(15)
 					Layout.rightMargin: Material.Units.dp(0)
-					font.family: "Bank Gothic"
+					font.family: scoreFont.name
 					font.pixelSize: Material.Units.dp(30)
 					color: Material.Theme.light.textColor
 					text: board.p1Score
@@ -359,7 +359,7 @@ CustomPage {
 					Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
 					Layout.leftMargin: Material.Units.dp(15)
 					Layout.rightMargin: Material.Units.dp(0)
-					font.family: "Bank Gothic"
+					font.family: scoreFont.name
 					font.pixelSize: Material.Units.dp(30)
 					color: Material.Theme.light.textColor
 					text: board.p2Score
@@ -572,6 +572,15 @@ CustomPage {
 			}
 		}
 	}
+    
+    FontLoader {
+        id: scoreFont
+        source: "qrc:/font/BankGothic.ttf"
+    }
+    FontLoader {
+        id: timerFont
+        source: "font/ZhuanTi.ttc"
+    }
 	
 	FileDialog {
 		id: fileDialog

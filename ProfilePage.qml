@@ -43,9 +43,7 @@ CustomPage {
 				
 				text: GameStorage.profileName
 				placeholderText: "Your name"
-				onTextChanged: {
-					GameStorage.setProfileName(text)
-				}
+				onTextChanged: GameStorage.profileName = text
 			}
 			
 			ListItem.Subheader {

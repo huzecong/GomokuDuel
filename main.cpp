@@ -5,6 +5,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QStandardPaths>
+#include <QFontDatabase>
 #include "gamestorage.h"
 #include "udpbroadcastmanager.h"
 #include "gamelogic.h"
@@ -23,6 +24,10 @@ int main(int argc, char *argv[]) {
 	
 	QCoreApplication::setOrganizationName("Kanari");
 	QCoreApplication::setApplicationName("GomokuDuel");
+    
+    QFontDatabase::addApplicationFont("qrc:/font/HoboStd.otf");
+    QFontDatabase::addApplicationFont("qrc:/font/BankGothic.ttf");
+    QFontDatabase::addApplicationFont("font/ZhuanTi.ttc");
 	
 	QDir::root().mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
 	

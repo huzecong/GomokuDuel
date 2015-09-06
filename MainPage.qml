@@ -35,7 +35,7 @@ CustomPage {
 			}
 		}
 	}
-	
+    
 	ColumnLayout {
 		id: buttons
 		anchors {

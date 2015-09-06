@@ -152,7 +152,7 @@ public slots:
 private:
 	static const int UDP_PORT = 8263;
 	const int __udpSendInterval = 1000;
-	const int __udpTimeoutInterval = 5000;
+	const int __udpTimeoutInterval = 4000;
 	
 	QList<UdpBroadcastHostData> pendingOpponent;
 	QHostAddress ip, aimHostIP;

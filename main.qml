@@ -16,12 +16,12 @@ Material.ApplicationWindow {
 	
 	title: qsTr("Gomoku Duel")
 	
-	property bool largeScreen: Screen.desktopAvailableHeight >= 800
+	property bool largeScreen: Screen.desktopAvailableHeight >= 900
 	
 	width: largeScreen ? 1200 : 920
 	height: largeScreen? 900 : 690
-	maximumHeight: minimumHeight
-	maximumWidth: minimumWidth
+//	maximumHeight: minimumHeight
+//	maximumWidth: minimumWidth
 	property double scale: width / 1600
 	
 	onClosing: {
@@ -49,7 +49,7 @@ Material.ApplicationWindow {
 		}
 		ParallelAnimation {
 			PropertyAnimation {
-				target: initialPage; property: "opacity"
+				target: pageStack; property: "opacity"
 				duration: 750; from: 1.0; to: 0.0
 			}
 			PropertyAnimation {
@@ -65,9 +65,9 @@ Material.ApplicationWindow {
 	Image {
 		id: bg
 		z: -1
-		source: "qrc:/image/background.png"
+		source: "qrc:/image/background.jpg"
 		anchors.fill: parent
-		fillMode: Image.PreserveAspectFit
+		fillMode: Image.Stretch
 	}
 	
 	initialPage: GamePage {

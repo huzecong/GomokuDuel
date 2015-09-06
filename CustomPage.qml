@@ -234,10 +234,16 @@ FocusScope {
 						Text {
 								text: page.title
 								anchors.centerIn: parent
+                                font.family: titleFont.name
 								font.pixelSize: parent.height * 0.5
 						}
 				}
 		}
+        
+        FontLoader {
+            id: titleFont
+            source: "qrc:/font/BankGothic.ttf"
+        }
 
 		Rectangle {
 				anchors.fill: parent

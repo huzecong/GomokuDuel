@@ -17,10 +17,15 @@ Item {
 	width: text.implicitWidth
 	height: text.implicitHeight
 	
+    FontLoader {
+        id: hoboStd
+        source: "qrc:/font/HoboStd.otf"
+    }
+    
 	Text {
 		id: text
 		text: "TextButton"
-		font.family: "Hobo Std"
+		font.family: hoboStd.name
 		font.pointSize: root.fontSize * scale
 		property double scale: 1.0
 		anchors.centerIn: parent
