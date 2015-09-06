@@ -70,7 +70,7 @@ Material.ApplicationWindow {
 		fillMode: Image.Stretch
 	}
 	
-	initialPage: GamePage {
+	initialPage: MainPage {
 		Component.onCompleted: {
 			Material.Units.multiplier = window.largeScreen ? 2.0 : 1.0
 			console.log(Material.Units.multiplier)
