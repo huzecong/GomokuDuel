@@ -12,6 +12,9 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QList>
+#include <QFile>
+#include <QDir>
+#include <QStandardPaths>
 #include "defineproperty.h"
 
 #include <cassert>
@@ -36,6 +39,8 @@ signals:
 	void surrender(int player);
 	void exit(int player);
 	void draw(int player);
+	void load(int player, QString fileName);
+	void save(int player, QString fileName);
 	void showPiece(int x, int y, int player);
 	void timeout(int player);
 	
@@ -44,6 +49,7 @@ public slots:
 	void startTimeout(int msec, QString message);
 	void stopTimeout();
 	Q_INVOKABLE void gameEnd(int result);
+	bool checkFileExists(QString name);
 	
 	Q_INVOKABLE void receive();
 	Q_INVOKABLE void receiveRequest(QString request, int player);
@@ -55,6 +61,7 @@ public slots:
 	Q_INVOKABLE void receiveDropPiece(int x, int y, int player);
 	
 	Q_INVOKABLE void sendRequest(QString request, int player, QTcpSocket *socket = 0);
+	Q_INVOKABLE void sendSaveLoadRequest(QString request, int player, QString fileName, QTcpSocket *socket = 0);
 	Q_INVOKABLE void sendResponse(QString response, int player, QTcpSocket *socket = 0);
 	Q_INVOKABLE void sendChat(QString message, int player, QTcpSocket *socket = 0);
 	Q_INVOKABLE void sendReady(int player, QTcpSocket *socket = 0);
@@ -67,7 +74,7 @@ public slots:
 	
 private:
 	static const int TCP_PORT = 41013;
-	static const int n_qualifier = 11;
+	static const int n_qualifier = 14;
 	static const QString qualifiers[n_qualifier];
 	static const QList<uchar> requests, responses, all;
 	
@@ -112,7 +119,7 @@ private:
 	QTcpSocket *m_chatSocket, *m_socket;
 	QList<QTcpSocket *> m_observerList;
 	QList<uchar> m_acceptQualifiers;
-	QString m_myIP, m_lastRequest, m_names[2];
+	QString m_myIP, m_lastRequest, m_names[2], m_requestFileName;
 	bool m_isReady[2];
 	quint16 m_blockSize;
 	int m_first;

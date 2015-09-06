@@ -4,6 +4,7 @@ GameLogic::GameLogic(QObject *parent) : QObject(parent) {
 	this->m_first = 1;
 	this->m_color = None;
 	emit currentPlayerChanged(currentPlayer());
+	this->m_steps = 0;
 	this->m_updateTimer.setInterval(200);
 	this->m_timer.setInterval(TURN_TIME * 1000);
 	this->m_timer.setSingleShot(true);
@@ -19,6 +20,7 @@ void GameLogic::init(int first) {
 	this->m_first = first ^ 1;	// invert at game start
 	for (int i = 0; i < 2; ++i)
 		this->m_score[i] = this->m_time[i] = 0;
+	this->m_steps = 0;
 	emit currentPlayerChanged(currentPlayer());
 	updateTime();
 	emit p1ScoreChanged(p1Score());
@@ -95,6 +97,7 @@ void GameLogic::undo(int player) {
 }
 
 bool GameLogic::canUndo() const {
+	qDebug() << "canUndo" << this->m_steps;
 	if (this->m_steps >= 1
 	    && colorToPlayer(colorAt(this->m_history[this->m_steps])) == this->m_myself)
 		return true;
@@ -111,14 +114,89 @@ void GameLogic::surrender(int player) {
 	emit p2ScoreChanged(p2Score());
 	emit gameEnd(player ^ 1);
 	stopTimer();
-	this->m_color = -currentPlayer() - 1;
 	emit currentPlayerChanged(currentPlayer());
 }
 
 void GameLogic::draw() {
 	stopTimer();
 	emit gameEnd(-1);
-	this->m_color = -currentPlayer() - 1;
+	emit currentPlayerChanged(currentPlayer());
+}
+
+void GameLogic::load(QString dir, QString fileName) {
+	stopTimer();
+	QString path = QDir(dir).filePath(fileName);
+	qDebug() << path;
+	QFile file(path, this);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		emit criticalError(QString("Failed to open file\nError: %2 (code:%1)").arg(file.errorString(), file.error()));
+		return ;
+	}
+	QTextStream in(&file);
+	
+	emit resetAll();
+	in >> this->m_first >> this->m_color >> this->m_steps;
+	for (int i = 0; i < 2; ++i)
+		in >> this->m_time[i];
+	for (int i = 0; i < N; ++i)
+		for (int j = 0; j < N; ++j) {
+			in >> this->m_board[i][j];
+			if (this->m_board[i][j] != None)
+				emit showPiece(i, j, colors[this->m_board[i][j]]);
+		}
+	for (int i = 1; i <= this->m_steps; ++i)
+		in >> this->m_history[i];
+	int remain;
+	in >> remain;
+	file.close();
+	
+	emit canUndoChanged(canUndo());
+	emit currentColorChanged(currentColor());
+	emit currentPlayerChanged(currentPlayer());
+	if (remain > 0)
+		this->m_timer.setInterval(remain);
+	startTimer();
+	updateTime();
+}
+
+void GameLogic::save(QString dir, QString fileName) {
+	int remain = this->m_timer.remainingTime();
+	stopTimer();
+	QString path = QDir(dir).filePath(fileName);
+	qDebug() << path;
+	QFile file(path, this);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		emit criticalError(QString("Failed to open file\nError: %2 (code:%1)").arg(file.errorString(), file.error()));
+		return ;
+	}
+	QTextStream out(&file);
+	
+	out << this->m_first << " " << this->m_color << " " << this->m_steps << endl;
+	for (int i = 0; i < 2; ++i)
+		out << this->m_time[i] << " ";
+	out << endl;
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j)
+			out << this->m_board[i][j] << " ";
+		out << endl;
+	}
+	for (int i = 1; i <= this->m_steps; ++i)
+		out << this->m_history[i] << endl;
+	out << remain << endl;
+	file.close();
+	
+	for (int i = 0; i < N; ++i)
+		for (int j = 0; j < N; ++j)
+			this->m_board[i][j] = None;
+	this->m_first ^= 1;
+	this->m_color = Black;
+	this->m_steps = 0;
+	for (int i = 0; i < 2; ++i)
+		this->m_time[i] = 0;
+	stopTimer();
+	emit canUndoChanged(canUndo());
+	updateTime();
+	emit currentColorChanged(currentColor());
 	emit currentPlayerChanged(currentPlayer());
 }
 
@@ -133,7 +211,9 @@ void GameLogic::pauseTimer() {
 		this->m_updateTimer.stop();
 		int remain = this->m_timer.remainingTime();
 		this->m_timer.stop();
-		this->m_time[currentPlayer()] += this->m_timer.interval() - remain;
+		if (this->m_gameStarted) {
+			this->m_time[currentPlayer()] += this->m_timer.interval() - remain;
+		}
 		this->m_timer.setInterval(remain);
 	}
 }
@@ -143,9 +223,12 @@ void GameLogic::stopTimer() {
 		this->m_updateTimer.stop();
 		int remain = this->m_timer.remainingTime();
 		this->m_timer.stop();
-		this->m_time[currentPlayer()] += this->m_timer.interval() - remain;
+		if (this->m_gameStarted) {
+			this->m_time[currentPlayer()] += this->m_timer.interval() - remain;
+		}
 	}
 	this->m_timer.setInterval(TURN_TIME * 1000);
+
 }
 
 void GameLogic::updateTime() {

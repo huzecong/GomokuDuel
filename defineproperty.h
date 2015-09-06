@@ -34,4 +34,3 @@ private: \
 	_DEFINE_PROPERTY(type, lowerfirst##rest, upperfirst##rest)
 
 #endif // DEFINEPROPERTY_H
-

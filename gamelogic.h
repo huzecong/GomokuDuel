@@ -5,6 +5,8 @@
 #include <QString>
 #include <QDebug>
 #include <QTimer>
+#include <QFile>
+#include <QDir>
 #include "defineproperty.h"
 
 #include <cmath>
@@ -94,6 +96,8 @@ signals:
 	void gameEnd(int result);
 	void timeout(int player);
 	
+	void criticalError(QString message);
+	
 public slots:
 	Q_INVOKABLE void init(int first = 0);
 	Q_INVOKABLE void newGame();
@@ -104,6 +108,9 @@ public slots:
 	Q_INVOKABLE void undo(int player);
 	Q_INVOKABLE void surrender(int player);
 	Q_INVOKABLE void draw();
+	
+	Q_INVOKABLE void load(QString dir, QString fileName);
+	Q_INVOKABLE void save(QString dir, QString fileName);
 	
 	Q_INVOKABLE void startTimer();
 	Q_INVOKABLE void pauseTimer();
@@ -139,7 +146,7 @@ private:
 	static const int N = 15;
 	static const QString colors[2];
 	int m_score[2], m_color, m_board[N][N], m_first;
-	int m_history[N * N], m_steps, m_time[2];
+	int m_history[N * N + 100], m_steps, m_time[2];
 	QTimer m_timer, m_updateTimer;
 };
 

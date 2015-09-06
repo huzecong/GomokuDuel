@@ -28,47 +28,47 @@ import Material.ListItems 0.1
    Provides ink effects, mouse/touch handling and tinting on mouse hover.
  */
 View {
-    id: listItem
-    anchors {
-        left: parent ? parent.left : undefined
-        right: parent ? parent.right : undefined
-    }
+	id: listItem
+	anchors {
+		left: parent ? parent.left : undefined
+		right: parent ? parent.right : undefined
+	}
 
-    property int margins: Units.dp(16)
+	property int margins: Units.dp(16)
 
-    property bool selected
-    property bool interactive: true
+	property bool selected
+	property bool interactive: true
 
-    property int dividerInset: 0
-    property bool showDivider: false
-    
-    property alias focused: ink.focused
+	property int dividerInset: 0
+	property bool showDivider: false
+	
+	property alias focused: ink.focused
 
-    signal clicked()
-    signal pressAndHold()
+	signal clicked()
+	signal pressAndHold()
 
-    opacity: enabled ? 1 : 0.6
+	opacity: enabled ? 1 : 0.6
 
-    ThinDivider {
-        anchors.bottom: parent.bottom
-        anchors.leftMargin: dividerInset
+	ThinDivider {
+		anchors.bottom: parent.bottom
+		anchors.leftMargin: dividerInset
 
-        visible: showDivider
-    }
+		visible: showDivider
+	}
 
-    Ink {
-        id: ink
+	Ink {
+		id: ink
 
-        onClicked: listItem.clicked()
-        onPressAndHold: listItem.pressAndHold()
+		onClicked: listItem.clicked()
+		onPressAndHold: listItem.pressAndHold()
 
-        anchors.fill: parent
+		anchors.fill: parent
 
-        enabled: listItem.interactive && listItem.enabled
-        z: -1
-    }
+		enabled: listItem.interactive && listItem.enabled
+		z: -1
+	}
 
-    tintColor: selected
-               ? Qt.rgba(0,0,0,0.05)
-               : ink.containsMouse ? Qt.rgba(0,0,0,0.03) : Qt.rgba(0,0,0,0)
+	tintColor: selected
+			   ? Qt.rgba(0,0,0,0.05)
+			   : ink.containsMouse ? Qt.rgba(0,0,0,0.03) : Qt.rgba(0,0,0,0)
 }
