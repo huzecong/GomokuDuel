@@ -26,8 +26,8 @@
 struct UdpBroadcastHostData {
 	UdpBroadcastHostData() {}
 	UdpBroadcastHostData(const QString &_name, const QString &_ip,
-	                const QString &_avatarId, const QDateTime &_dateTime)
-	    : name(_name), ip(_ip), avatarId(_avatarId), dateTime(_dateTime) {}
+	                const QString &_avatarId, int _uniqueId, const QDateTime &_dateTime)
+	    : name(_name), ip(_ip), uniqueId(_uniqueId), avatarId(_avatarId), dateTime(_dateTime) {}
 		
 	inline bool operator == (const UdpBroadcastHostData &data) const {
 		if (this->name != data.name) return false;
@@ -36,6 +36,7 @@ struct UdpBroadcastHostData {
 	}
 	
 	QString name, ip;
+	int uniqueId;
 	QString avatarId;	// used with custom image provider
 	QDateTime dateTime;
 };
@@ -48,7 +49,8 @@ public:
 	enum RoleNames {
 		NameRole = Qt::UserRole,
 		AvatarRole = Qt::UserRole + 2,
-		IPRole = Qt::UserRole + 3
+		IPRole = Qt::UserRole + 3,
+		UniqueIDRole = Qt::UserRole + 4
 	};
 	explicit UdpBroadcastHostList(QObject *parent = 0);
 	
@@ -63,8 +65,8 @@ signals:
 	void countChanged(int count);
 	
 public:
-    virtual int rowCount(const QModelIndex &parent) const override;
-    virtual QVariant data(const QModelIndex &index, int role) const override;
+	virtual int rowCount(const QModelIndex &parent) const override;
+	virtual QVariant data(const QModelIndex &index, int role) const override;
 	
 	void insert(int index, const UdpBroadcastHostData &data);
 	void append(const UdpBroadcastHostData &data);
@@ -78,11 +80,11 @@ public:
 	}
 	
 protected:
-    virtual QHash<int, QByteArray> roleNames() const override;
+	virtual QHash<int, QByteArray> roleNames() const override;
 	
 private:
-    QList<UdpBroadcastHostData> m_data;
-    QHash<int, QByteArray> m_roleNames;
+	QList<UdpBroadcastHostData> m_data;
+	QHash<int, QByteArray> m_roleNames;
 	
 	void add(const UdpBroadcastHostData &data);
 	void remove(const UdpBroadcastHostData &data);
@@ -115,12 +117,13 @@ public:
 signals: DEFINE_PROPERTY(bool, I, i, sHost)
 signals: DEFINE_PROPERTY(QString, P, p, rofileName)
 signals: DEFINE_PROPERTY(QString, A, a, vatarId)
+signals: DEFINE_PROPERTY(int, U, u, niqueId)
 	
 signals:
 	void hostAddressChanged(QString hostAddress);
 	
 	void hostTimeout(QString name, QString ip);
-	void newOpponent(QString name, QString ip, QString avatarId);
+	void newOpponent(QString name, QString ip, int uniqueId, QString avatarId);
 	void invalidHostIP(QString ip);
 	void requestRefused(QString ip);
 	void requestAccepted(QString ip);
@@ -149,7 +152,7 @@ public slots:
 private:
 	static const int UDP_PORT = 8263;
 	const int __udpSendInterval = 1000;
-	const int __udpTimeoutInterval = 4000;
+	const int __udpTimeoutInterval = 5000;
 	
 	QList<UdpBroadcastHostData> pendingOpponent;
 	QHostAddress ip, aimHostIP;

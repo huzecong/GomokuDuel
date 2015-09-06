@@ -1,18 +1,18 @@
 #include "tcpnetworkmanager.h"
 
 const QString TcpNetworkManager::qualifiers[n_qualifier] = {
-    "undo", "surrender", "exit", "draw",
+    "undo", "surrender", "exit", "draw", "load", "save",
     "accept", "refuse",
-    "chat", "start", "ready", "droppiece", "timeout"
+    "chat", "start", "ready", "droppiece", "timeout", "loaddata"
 };
 const QList<uchar> TcpNetworkManager::requests = getQualifier
-        ({"undo", "surrender", "draw", "exit"});
+        ({"undo", "surrender", "draw", "exit", "load", "save"});
 const QList<uchar> TcpNetworkManager::responses = getQualifier
         ({"accept", "refuse"});
 const QList<uchar> TcpNetworkManager::all = getQualifier({
-	"undo", "surrender", "exit", "draw",
+	"undo", "surrender", "exit", "draw", "load", "save",
     "accept", "refuse",
-    "chat", "start", "ready", "droppiece", "timeout"
+    "chat", "start", "ready", "droppiece", "timeout", "loaddata"
 });
 
 TcpNetworkManager::TcpNetworkManager(QObject *parent) : QObject(parent) {
@@ -108,11 +108,17 @@ void TcpNetworkManager::gameEnd(int result) {
 	if (result == -1) {
 		QString message = tr("<u>Game result: <b>Draw</b></u>");
 		appendChat(message);
-	} else {
+	} else if (result > 0) {
 		QString message = tr("<u>Game result: <b>%1</b> won</u>");
 		message = message.arg(result == this->m_myself ? "You" : this->m_names[result]);
 		appendChat(message);
 	}
+}
+
+bool TcpNetworkManager::checkFileExists(QString name) {
+	QDir dir((QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)));
+	QString path = dir.filePath(name);
+	return QFile::exists(path);
 }
 
 void TcpNetworkManager::receive() {
@@ -181,10 +187,13 @@ void TcpNetworkManager::receive() {
 		}
 	}
 	else if (requests.contains(_qualifier)) {
+		if (qualifier == "save" || qualifier == "load") {
+			in >> this->m_requestFileName;
+		}
 		receiveRequest(qualifier, player);
 		if (this->m_type == Host) {
 			for (auto socket : this->m_observerList)
-				sendRequest(qualifier, player, socket);
+				sendSaveLoadRequest(qualifier, player, this->m_requestFileName, socket);
 		}
 	}
 	else if (responses.contains(_qualifier)) {
@@ -202,13 +211,24 @@ void TcpNetworkManager::receive() {
 
 void TcpNetworkManager::receiveRequest(QString request, int player) {
 	this->m_lastRequest = request;
-	if (this->m_type != Observer)
-		emit this->request(request);
 	
-	QString message = tr("<i>System: <b>%1</b> sent a request for %2</i>");
+	QString message = tr("<i>System: <b>%1</b> sent a request for <u>%2</u></i>");
 	message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
 	message = message.arg(request);
 	appendChat(message);
+	
+	if (this->m_type != Observer) {
+		if (request == "save" || request == "load") {
+			if ((request == "load" && !checkFileExists(this->m_requestFileName))
+			    || (request == "save" && checkFileExists(this->m_requestFileName))) {
+				sendResponse("refuse", this->m_myself);
+				for (auto socket : this->m_observerList)
+					sendResponse("refuse", this->m_myself, socket);
+				return ;
+			}
+		}
+		emit this->request(request);
+	}
 }
 
 void TcpNetworkManager::receiveResponse(QString response, int player) {
@@ -218,12 +238,22 @@ void TcpNetworkManager::receiveResponse(QString response, int player) {
 	
 	if (response == "accept") response.append("ed");
 	else response.append("d");
-	QString message = tr("<i>System: <b>%1</b> %2 <b>%3</b> %4 request</i>");
-	message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
-	message = message.arg(response);
-	message = message.arg((player ^ 1) == this->m_myself ? "your" : this->m_names[player ^ 1] + "'s");
-	message = message.arg(this->m_lastRequest);
-	appendChat(message);
+	if (this->m_lastRequest == "save" || this->m_lastRequest == "load") {
+		QString message = tr("<i>System: <b>%1</b> %2 <b>%3</b> request to <u>%4</u> %5</i>");
+		message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
+		message = message.arg(response);
+		message = message.arg((player ^ 1) == this->m_myself ? "your" : this->m_names[player ^ 1] + "'s");
+		message = message.arg(this->m_lastRequest);
+		message = message.arg(this->m_requestFileName);
+		appendChat(message);
+	} else {
+		QString message = tr("<i>System: <b>%1</b> %2 <b>%3</b> <u>%4</u> request</i>");
+		message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
+		message = message.arg(response);
+		message = message.arg((player ^ 1) == this->m_myself ? "your" : this->m_names[player ^ 1] + "'s");
+		message = message.arg(this->m_lastRequest);
+		appendChat(message);
+	}
 	
 	if (response == "accepted") {		// Changed due to code above ... =_=
 		if (this->m_lastRequest == "undo") {
@@ -234,10 +264,16 @@ void TcpNetworkManager::receiveResponse(QString response, int player) {
 			emit exit(player ^ 1);
 		} else if (this->m_lastRequest == "draw") {
 			emit draw(player ^ 1);
-		}
+		} else if (this->m_lastRequest == "load") {
+			assert(this->m_requestFileName != "");
+			emit load(player ^ 1, this->m_requestFileName);
+		} else if (this->m_lastRequest == "save") {
+			assert(this->m_requestFileName != "");
+			emit save(player ^ 1, this->m_requestFileName);
+		} else assert(false);
 	}
 	
-	this->m_lastRequest = "";
+	this->m_lastRequest = "", this->m_requestFileName = "";
 }
 
 void TcpNetworkManager::receiveChat(QString message, int player) {
@@ -306,11 +342,36 @@ void TcpNetworkManager::sendRequest(QString request, int player, QTcpSocket *soc
 	
 	if (socket == 0) {
 		socket = this->m_socket;
-		QString message = tr("<i>System: <b>%1</b> sent a request for %2</i>");
+		QString message = tr("<i>System: <b>%1</b> sent a request for <u>%2</u></i>");
 		message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
 		message = message.arg(request);
 		appendChat(message);
 		this->m_lastRequest = request;
+	}
+	socket->write(block);
+}
+
+void TcpNetworkManager::sendSaveLoadRequest(QString request, int player, QString fileName, QTcpSocket *socket) {
+	QByteArray block;
+	QDataStream out(&block, QIODevice::WriteOnly);
+	out.setVersion(QDataStream::Qt_4_0);
+	
+	qDebug() << "send" << "request" << request << fileName << player;
+	
+	out << (quint16)0;
+	uchar qualifier = getQualifier(request);
+	out << qualifier << player << fileName;
+	out.device()->seek(0);
+	out << (quint16)(block.size() - sizeof(quint16));
+	
+	if (socket == 0) {
+		socket = this->m_socket;
+		QString message = tr("<i>System: <b>%1</b> sent a request to <u>%2</u> %3</i>");
+		message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
+		message = message.arg(request).arg(fileName);
+		appendChat(message);
+		this->m_lastRequest = request;
+		this->m_requestFileName = fileName;
 	}
 	socket->write(block);
 }
@@ -333,12 +394,22 @@ void TcpNetworkManager::sendResponse(QString response, int player, QTcpSocket *s
 		
 		if (response == "accept") response.append("ed");
 		else response.append("d");
-		QString message = tr("<i>System: <b>%1</b> %2 <b>%3</b> %4 request</i>");
-		message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
-		message = message.arg(response);
-		message = message.arg((player ^ 1) == this->m_myself ? "your" : this->m_names[player ^ 1] + "'s");
-		message = message.arg(this->m_lastRequest);
-		appendChat(message);
+		if (this->m_lastRequest == "save" || this->m_lastRequest == "load") {
+			QString message = tr("<i>System: <b>%1</b> %2 <b>%3</b> request to <u>%4</u> %5</i>");
+			message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
+			message = message.arg(response);
+			message = message.arg((player ^ 1) == this->m_myself ? "your" : this->m_names[player ^ 1] + "'s");
+			message = message.arg(this->m_lastRequest);
+			message = message.arg(this->m_requestFileName);
+			appendChat(message);
+		} else {
+			QString message = tr("<i>System: <b>%1</b> %2 <b>%3</b> <u>%4</u> request</i>");
+			message = message.arg(player == this->m_myself ? "You" : this->m_names[player]);
+			message = message.arg(response);
+			message = message.arg((player ^ 1) == this->m_myself ? "your" : this->m_names[player ^ 1] + "'s");
+			message = message.arg(this->m_lastRequest);
+			appendChat(message);
+		}
 		
 		if (response == "accepted") {		// Changed due to code above ... =_=
 			qDebug() << "last request" << this->m_lastRequest;
@@ -350,9 +421,15 @@ void TcpNetworkManager::sendResponse(QString response, int player, QTcpSocket *s
 				emit exit(player ^ 1);
 			} else if (this->m_lastRequest == "draw") {
 				emit draw(player ^ 1);
-			}
+			} else if (this->m_lastRequest == "load") {
+				assert(this->m_requestFileName != "");
+				emit load(player ^ 1, this->m_requestFileName);
+			} else if (this->m_lastRequest == "save") {
+				assert(this->m_requestFileName != "");
+				emit save(player ^ 1, this->m_requestFileName);
+			} else assert(false);
 		}
-		this->m_lastRequest = "";
+		this->m_lastRequest = "", this->m_requestFileName = "";
 	}
 	socket->write(block);
 }
@@ -394,7 +471,7 @@ void TcpNetworkManager::sendReady(int player, QTcpSocket *socket) {
 	if (socket == 0) {
 		socket = this->m_socket;
 		
-		qDebug() << "send" << "ready" << player;		
+		qDebug() << "send" << "ready" << player;
 		
 		QString message = tr("<i>System: ");
 		if (player == this->m_myself) message.append("<b>You</b> are");
@@ -483,17 +560,17 @@ void TcpNetworkManager::appendChat(const QString &message) {
 }
 
 void TcpNetworkManager::handleError(QAbstractSocket::SocketError socketError) {
-    switch (socketError) {
-    case QAbstractSocket::RemoteHostClosedError:
+	switch (socketError) {
+	case QAbstractSocket::RemoteHostClosedError:
 		emit criticalError("Your opponent may have gone offline\nError: " + this->m_socket->errorString());
-        break;
-    case QAbstractSocket::HostNotFoundError:
-        emit criticalError("Please check your Internet connection\nError: " + this->m_socket->errorString());
-        break;
-    case QAbstractSocket::ConnectionRefusedError:
-        emit criticalError("Your opponent may have gone offline\nError: " + this->m_socket->errorString());
-        break;
-    default:
-        emit criticalError("Unknown error: " + this->m_socket->errorString());
-    }
+		break;
+	case QAbstractSocket::HostNotFoundError:
+		emit criticalError("Please check your Internet connection\nError: " + this->m_socket->errorString());
+		break;
+	case QAbstractSocket::ConnectionRefusedError:
+		emit criticalError("Your opponent may have gone offline\nError: " + this->m_socket->errorString());
+		break;
+	default:
+		emit criticalError("Unknown error: " + this->m_socket->errorString());
+	}
 }

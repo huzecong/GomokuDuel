@@ -3,7 +3,7 @@ import Material 0.1
 
 Item {
 	id: root
-    
+	
 	property double length: parent.parent.gridSize
 	property string color: "black"
 	property int posX: 0
@@ -14,24 +14,24 @@ Item {
 	states: [
 		State {
 			name: "hidden"
-            PropertyChanges { target: root; width: length * 1.7; opacity: 0.0 }
+			PropertyChanges { target: root; width: length * 1.7; opacity: 0.0 }
 		},
 		State {
 			name: "shown"
-            PropertyChanges { target: root; width: length; opacity: 1.0 }
+			PropertyChanges { target: root; width: length; opacity: 1.0 }
 		}
 	]
 	state: "hidden"
-    transitions: [
-        Transition {
-            from: "hidden"; to: "shown"
-            PropertyAnimation { properties: "opacity, width"; duration: 200; easing.type: Easing.OutQuart }
-        },
-        Transition {
-            from: "shown"; to: "hidden"
-            PropertyAnimation { properties: "opacity, width"; duration: 200; easing.type: Easing.InQuart }
-        }
-    ]
+	transitions: [
+		Transition {
+			from: "hidden"; to: "shown"
+			PropertyAnimation { properties: "opacity, width"; duration: 200; easing.type: Easing.OutQuart }
+		},
+		Transition {
+			from: "shown"; to: "hidden"
+			PropertyAnimation { properties: "opacity, width"; duration: 200; easing.type: Easing.InQuart }
+		}
+	]
 	
 	width: length
 	height: width
@@ -47,11 +47,10 @@ Item {
 		
 		Image {
 			id: rect
-            source: "qrc:/image/%1.png".arg(root.color)
+			source: "qrc:/image/%1.png".arg(root.color)
 			width: parent.width
 			height: width
 			antialiasing: true
 		}
 	}
 }
-

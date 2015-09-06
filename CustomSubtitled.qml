@@ -28,130 +28,130 @@ import Material.ListItems 0.1
    \brief A list item with a two or three lines of text and optional primary and secondary actions.
  */
 CustomBaseListItem {
-    id: listItem
+	id: listItem
 
-    height: maximumLineCount == 2 ? Units.dp(72) : Units.dp(88)
+	height: maximumLineCount == 2 ? Units.dp(72) : Units.dp(88)
 
-    property alias text: label.text
-    property alias subText: subLabel.text
-    property alias valueText: valueLabel.text
+	property alias text: label.text
+	property alias subText: subLabel.text
+	property alias valueText: valueLabel.text
 
-    property alias iconName: icon.name
-    property alias iconSource: icon.source
+	property alias iconName: icon.name
+	property alias iconSource: icon.source
 
-    property alias action: actionItem.children
-    property alias secondaryItem: secondaryItem.children
-    property alias content: contentItem.children
-    
-    interactive: contentItem.children.length === 0
+	property alias action: actionItem.children
+	property alias secondaryItem: secondaryItem.children
+	property alias content: contentItem.children
+	
+	interactive: contentItem.children.length === 0
 
-    dividerInset: actionItem.visible ? listItem.height : 0
+	dividerInset: actionItem.visible ? listItem.height : 0
 
-    property int maximumLineCount: 2
+	property int maximumLineCount: 2
 
-    GridLayout {
-        anchors.fill: parent
+	GridLayout {
+		anchors.fill: parent
 
-        anchors.leftMargin: listItem.margins
-        anchors.rightMargin: listItem.margins
+		anchors.leftMargin: listItem.margins
+		anchors.rightMargin: listItem.margins
 
-        columns: 4
-        rows: 1
-        columnSpacing: Units.dp(16)
+		columns: 4
+		rows: 1
+		columnSpacing: Units.dp(16)
 
-        Item {
-            id: actionItem
+		Item {
+			id: actionItem
 
-            Layout.preferredWidth: Units.dp(40)
-            Layout.preferredHeight: width
-            Layout.alignment: Qt.AlignCenter
-            Layout.column: 1
+			Layout.preferredWidth: Units.dp(40)
+			Layout.preferredHeight: width
+			Layout.alignment: Qt.AlignCenter
+			Layout.column: 1
 
-            visible: children.length > 1 || icon.valid
+			visible: children.length > 1 || icon.valid
 
-            Icon {
-                id: icon
+			Icon {
+				id: icon
 
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    left: parent.left
-                }
+				anchors {
+					verticalCenter: parent.verticalCenter
+					left: parent.left
+				}
 
-                visible: valid
-                color: listItem.selected ? Theme.primaryColor : Theme.light.iconColor
-                size: Units.dp(24)
-            }
-        }
+				visible: valid
+				color: listItem.selected ? Theme.primaryColor : Theme.light.iconColor
+				size: Units.dp(24)
+			}
+		}
 
-        ColumnLayout {
-            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-            Layout.fillWidth: true
-            Layout.column: 2
+		ColumnLayout {
+			Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+			Layout.fillWidth: true
+			Layout.column: 2
 
-            spacing: Units.dp(3)
+			spacing: Units.dp(3)
 
-            RowLayout {
-                Layout.fillWidth: true
+			RowLayout {
+				Layout.fillWidth: true
 
-                spacing: Units.dp(8)
+				spacing: Units.dp(8)
 
-                Label {
-                    id: label
+				Label {
+					id: label
 
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.fillWidth: true
+					Layout.alignment: Qt.AlignVCenter
+					Layout.fillWidth: true
 
-                    elide: Text.ElideRight
-                    style: "subheading"
-                }
+					elide: Text.ElideRight
+					style: "subheading"
+				}
 
-                Label {
-                    id: valueLabel
+				Label {
+					id: valueLabel
 
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.preferredWidth: visible ? implicitWidth : 0
+					Layout.alignment: Qt.AlignVCenter
+					Layout.preferredWidth: visible ? implicitWidth : 0
 
-                    color: Theme.light.subTextColor
-                    elide: Text.ElideRight
-                    horizontalAlignment: Qt.AlignHCenter
-                    style: "body1"
-                    visible: text != ""
-                }
-            }
+					color: Theme.light.subTextColor
+					elide: Text.ElideRight
+					horizontalAlignment: Qt.AlignHCenter
+					style: "body1"
+					visible: text != ""
+				}
+			}
 
-            Item {
-                id: contentItem
+			Item {
+				id: contentItem
 
-                Layout.fillWidth: true
+				Layout.fillWidth: true
 
-                visible: children.length > 0
-                height: visible ? subLabel.implicitHeight : 0
-            }
+				visible: children.length > 0
+				height: visible ? subLabel.implicitHeight : 0
+			}
 
-            Label {
-                id: subLabel
+			Label {
+				id: subLabel
 
-                Layout.fillWidth: true
-                Layout.preferredHeight: implicitHeight * maximumLineCount/lineCount
+				Layout.fillWidth: true
+				Layout.preferredHeight: implicitHeight * maximumLineCount/lineCount
 
-                color: Theme.light.subTextColor
-                elide: Text.ElideRight
-                wrapMode: Text.WordWrap
-                style: "body1"
+				color: Theme.light.subTextColor
+				elide: Text.ElideRight
+				wrapMode: Text.WordWrap
+				style: "body1"
 
-                visible: text != "" && !contentItem.visible
-                maximumLineCount: listItem.maximumLineCount - 1
-            }
-        }
+				visible: text != "" && !contentItem.visible
+				maximumLineCount: listItem.maximumLineCount - 1
+			}
+		}
 
-        Item {
-            id: secondaryItem
-            Layout.alignment: Qt.AlignCenter
-            Layout.preferredWidth: childrenRect.width
-            Layout.preferredHeight: parent.height
-            Layout.column: 4
+		Item {
+			id: secondaryItem
+			Layout.alignment: Qt.AlignCenter
+			Layout.preferredWidth: childrenRect.width
+			Layout.preferredHeight: parent.height
+			Layout.column: 4
 
-            visible: childrenRect.width > 0
-        }
-    }
+			visible: childrenRect.width > 0
+		}
+	}
 }

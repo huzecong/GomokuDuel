@@ -2,21 +2,29 @@
 #include <QQmlApplicationEngine>
 #include <QtQml>
 #include <QtQuick>
+#include <QCoreApplication>
+#include <QDir>
+#include <QStandardPaths>
 #include "gamestorage.h"
 #include "udpbroadcastmanager.h"
 #include "gamelogic.h"
 #include "tcpnetworkmanager.h"
 
 static QObject *gameStorageProvider(QQmlEngine *engine, QJSEngine *scriptEngine) {
-    Q_UNUSED(engine)
-    Q_UNUSED(scriptEngine)
-
-    GameStorage *controller = new GameStorage();
-    return controller;
+	Q_UNUSED(engine)
+	Q_UNUSED(scriptEngine)
+	
+	GameStorage *controller = new GameStorage();
+	return controller;
 }
 
 int main(int argc, char *argv[]) {
 	QGuiApplication app(argc, argv);
+	
+	QCoreApplication::setOrganizationName("Kanari");
+	QCoreApplication::setApplicationName("GomokuDuel");
+	
+	QDir::root().mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
 	
 	QQmlApplicationEngine engine;
 	

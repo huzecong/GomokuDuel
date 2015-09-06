@@ -1,83 +1,74 @@
 #include "udpbroadcastmanager.h"
 
 UdpBroadcastHostList::UdpBroadcastHostList(QObject *parent)
-    : QAbstractListModel(parent) {
-    
-	m_roleNames[NameRole] = "name";
-    m_roleNames[AvatarRole] = "avatarId";
-    m_roleNames[IPRole] = "ip";
+	: QAbstractListModel(parent) {
 	
-	/*
-	for (int i = 0; i < 10; ++i) {
-		NetworkHostData data;
-		data.name = QString("Player %1").arg(i + 1);
-		data.avatarId = "null";
-		data.ip = QString("%1.%2.%3.%4").arg(rand() % 256).arg(rand() % 256)
-		        .arg(rand() % 256).arg(rand() % 256);
-		data.dateTime = QDateTime::currentDateTime();
-		this->m_data.append(data);
-	}
-	*/
+	m_roleNames[NameRole] = "name";
+	m_roleNames[AvatarRole] = "avatarId";
+	m_roleNames[IPRole] = "ip";
+	m_roleNames[UniqueIDRole] = "uniqueId";
 }
 
 int UdpBroadcastHostList::rowCount(const QModelIndex &parent) const {
-    Q_UNUSED(parent);
-    return m_data.count();
+	Q_UNUSED(parent);
+	return m_data.count();
 }
 
 QVariant UdpBroadcastHostList::data(const QModelIndex &index, int role) const {
-    int row = index.row();
-    if(row < 0 || row >= m_data.count()) {
-        return QVariant();
-    }
-    const UdpBroadcastHostData& host = m_data.at(row);
-    switch(role) {
-    case NameRole:
-        return host.name;
-    case AvatarRole:
+	int row = index.row();
+	if(row < 0 || row >= m_data.count()) {
+		return QVariant();
+	}
+	const UdpBroadcastHostData& host = m_data.at(row);
+	switch(role) {
+	case NameRole:
+		return host.name;
+	case AvatarRole:
 		return host.avatarId;
 	case IPRole:
 		return host.ip;
-    }
-    return QVariant();
+	case UniqueIDRole:
+		return host.uniqueId;
+	}
+	return QVariant();
 }
 
 QHash<int, QByteArray> UdpBroadcastHostList::roleNames() const {
-    return m_roleNames;
+	return m_roleNames;
 }
 
 void UdpBroadcastHostList::insert(int index, const UdpBroadcastHostData &data) {
-    if(index < 0 || index > m_data.count()) {
-        return;
-    }
-    // view protocol (begin => manipulate => end]
-    emit beginInsertRows(QModelIndex(), index, index);
-    m_data.insert(index, data);
-    emit endInsertRows();
-    // update our count property
-    emit countChanged(m_data.count());
+	if(index < 0 || index > m_data.count()) {
+		return;
+	}
+	// view protocol (begin => manipulate => end]
+	emit beginInsertRows(QModelIndex(), index, index);
+	m_data.insert(index, data);
+	emit endInsertRows();
+	// update our count property
+	emit countChanged(m_data.count());
 }
 
 void UdpBroadcastHostList::append(const UdpBroadcastHostData &data) {
-    insert(count(), data);
+	insert(count(), data);
 }
 
 void UdpBroadcastHostList::remove(int index) {
-    if(index < 0 || index >= m_data.count()) {
-        return;
-    }
-    emit beginRemoveRows(QModelIndex(), index, index);
-    m_data.removeAt(index);
-    emit endRemoveRows();
-    // do not forget to update our count property
+	if(index < 0 || index >= m_data.count()) {
+		return;
+	}
+	emit beginRemoveRows(QModelIndex(), index, index);
+	m_data.removeAt(index);
+	emit endRemoveRows();
+	// do not forget to update our count property
 	emit countChanged(m_data.count());
 }
 
 void UdpBroadcastHostList::clear() {
 	emit beginRemoveRows(QModelIndex(), 0, count() - 1);
-    m_data.clear();
-    emit endRemoveRows();
-    // do not forget to update our count property
+	m_data.clear();
+	emit endRemoveRows();
+	// do not forget to update our count property
 	emit countChanged(m_data.count());
 }
 
@@ -108,6 +99,7 @@ void UdpBroadcastManager::sendInfo(const QString &qualifier, const QHostAddress 
 	out << dateTime;
 	out << this->m_profileName;
 	out << this->m_avatarId;
+	out << this->m_uniqueId;
 	out << this->ip.toString();
 	out << qualifier;
 	udpSocket.writeDatagram(datagram, datagram.size(), ip, UDP_PORT);
@@ -163,12 +155,12 @@ bool UdpBroadcastManager::updateHostList(const UdpBroadcastHostData &data) {
 }
 
 void UdpBroadcastManager::connectToHost(QString ip) {
-    qDebug() << "connect to host:" << ip;
+	qDebug() << "connect to host:" << ip;
 	assert(this->isHost() == false);
 	this->aimHostIP = QHostAddress(ip);
 	if (this->aimHostIP.isNull()) {
 		emit invalidHostIP(ip);
-        assert(false);
+		assert(false);
 	} else {
 		sendInfo("join", this->aimHostIP);
 	}
@@ -179,11 +171,11 @@ void UdpBroadcastManager::abortConnectToHost() {
 }
 
 void UdpBroadcastManager::__newOpponent(const UdpBroadcastHostData &data) {
-	emit newOpponent(data.name, data.ip, data.avatarId);
+	emit newOpponent(data.name, data.ip, data.uniqueId, data.avatarId);
 }
 
 void UdpBroadcastManager::respondJoinRequest(QString ip, bool accepted,
-                                        bool triggerNewSignal) {
+	                                         bool triggerNewSignal) {
 	assert(this->isHost() == true);
 	
 	if (accepted) sendInfo("accept", ip);
@@ -236,14 +228,15 @@ void UdpBroadcastManager::receiveMatchInfo() {
 		datagram.resize(udpSocket.pendingDatagramSize());
 		udpSocket.readDatagram(datagram.data(), datagram.size());
 		QString ip, profile, qualifier, avatarId;
+		int uniqueId;
 		QDateTime dateTime;
 		QDataStream in(&datagram, QIODevice::ReadOnly);
 		in.setVersion(QDataStream::Qt_4_0);
-		in >> dateTime >> profile >> avatarId >> ip >> qualifier;
-		qDebug() << "receive" << dateTime << avatarId << ip << qualifier;
+		in >> dateTime >> profile >> avatarId >> uniqueId >> ip >> qualifier;
+		qDebug() << "receive" << dateTime << avatarId << uniqueId << ip << qualifier;
 		if (dateTime.msecsTo(QDateTime::currentDateTime()) >= __udpTimeoutInterval)
 			continue;
-		UdpBroadcastHostData data(profile, ip, avatarId, dateTime);
+		UdpBroadcastHostData data(profile, ip, avatarId, uniqueId, dateTime);
 		
 		if (qualifier == "create") {			// Host: create room
 			if (this->isHost() == false) {
